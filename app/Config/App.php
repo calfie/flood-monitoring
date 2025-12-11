@@ -16,7 +16,7 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    public string $baseURL = 'https://web-production-439b1.up.railway.app/';
+    public string $baseURL = 'https://enyoderamil-flood.up.railway.app/';
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
