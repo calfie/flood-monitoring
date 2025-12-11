@@ -10,7 +10,7 @@
         "slack": "https://codeigniterchat.slack.com"
     },
     "require": {
-         "php": ">=8.2 <8.4",
+         "php": ">=8.2",
          "codeigniter4/framework": "4.4.3",
     "ext-intl": "*",
     "monolog/monolog": "^2.0"
