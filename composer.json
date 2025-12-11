@@ -40,6 +40,14 @@
         "sort-packages": true
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+    
+    "post-install-cmd": [
+        "echo 'skip npm'"
+    ],
+    "post-update-cmd": [
+        "echo 'skip npm'"
+    ]
+
     }
 }
