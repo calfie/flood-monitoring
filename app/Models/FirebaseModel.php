@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
 
-class FirebaseModel extends Model
+class FirebaseModel
 {
     // URL Realtime Database (tanpa .json di akhir)
     protected string $firebaseBaseUrl = 'https://enyoderamil-default-rtdb.asia-southeast1.firebasedatabase.app';
