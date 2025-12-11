@@ -8,8 +8,15 @@
     <title><?= $title ?? 'Flood Monitoring'; ?></title>
 
     <!-- SB Admin CSS -->
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="<?= base_url('vendor/fontawesome-free/css/all.min.css'); ?>"
+        type="text/css">
 
-    link href="<?= base_url('sbadmin/css/sb-admin-2.css'); ?>" rel="stylesheet">
+    <!-- SB Admin 2 main CSS -->
+    <link rel="stylesheet"
+        href="<?= base_url('sbadmin/css/sb-admin-2.min.css'); ?>">
+
 </head>
 
 <body id="page-top">
