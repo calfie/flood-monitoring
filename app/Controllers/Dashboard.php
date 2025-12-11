@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Controllers\BaseController;
+use App\Models\FirebaseModel;
+
+class Dashboard extends BaseController
+{
+    // Klasifikasi status berdasarkan ketinggian air
+    private function classifyStatus(?float $distanceCm): string
+    {
+        if ($distanceCm === null || $distanceCm < 0) {
+            return '-';
+        }
+
+        // RULE
+        if ($distanceCm > 100) {
+            return 'AMAN';
+        } elseif ($distanceCm >= 50) {
+            return 'SIAGA';
+        }
+
+        return 'DARURAT';
+    }
+
+    public function index()
+    {
+        $firebase = new FirebaseModel();
+        $devices  = $firebase->getDevices();   // NODE1, NODE2, ...
+
+        // Untuk hitung status keseluruhan (ambil yang paling “parah”)
+        $statusRank = ['AMAN' => 1, 'SIAGA' => 2, 'WASPADA' => 3];
+        $worstRank  = 0;
+
+        foreach ($devices as $id => &$dev) {
+            // waktu tampilan (sementara dari server web)
+            $dev['updated_ms_readable'] = date('Y-m-d H:i:s');
+
+            // baca ketinggian & tentukan label parameter
+            $distance = isset($dev['distance_cm']) ? (float) $dev['distance_cm'] : null;
+            $label    = $this->classifyStatus($distance);
+            $dev['label_param'] = $label;
+
+            if (isset($statusRank[$label]) && $statusRank[$label] > $worstRank) {
+                $worstRank = $statusRank[$label];
+            }
+        }
+        unset($dev);
+
+        $overallStatus = '-';
+        if ($worstRank > 0) {
+            $overallStatus = array_search($worstRank, $statusRank, true);
+        }
+
+        return view('dashboard/public', [
+            'title'         => 'Dashboard Publik',
+            'nodes'         => $devices,
+            'overallStatus' => $overallStatus,
+        ]);
+    }
+}
