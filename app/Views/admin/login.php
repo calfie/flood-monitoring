@@ -7,8 +7,6 @@
     <span class="navbar-brand mb-0 h5 font-weight-bold">
         ENYODERAMIL
     </span>
-
-    </span>
     <a href="<?= base_url('/'); ?>" class="btn btn-outline-secondary btn-sm">
         Kembali ke dashboard publik
     </a>
