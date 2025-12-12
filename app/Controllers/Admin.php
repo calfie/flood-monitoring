@@ -83,9 +83,9 @@ class Admin extends BaseController
             return '-';
         }
 
-        if ($flowLpm >= 40) {
+        if ($flowLpm >= 80) {
             return 'DARURAT';
-        } elseif ($flowLpm >= 20) { // 20–39
+        } elseif ($flowLpm >= 40) { // 20–39
             return 'SIAGA';
         }
 
