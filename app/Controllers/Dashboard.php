@@ -27,6 +27,8 @@ class Dashboard extends BaseController
     public function index()
     {
         helper('telegram');
+        sendTelegramAlert('🔥 TEST TELEGRAM DARI SERVER');
+
         $cache = \Config\Services::cache();
         $firebase = new FirebaseModel();
         $devices  = $firebase->getDevices();   // NODE1, NODE2, ...
