@@ -37,6 +37,9 @@ $routes->get('admin/users', 'Admin::users');                        // halaman d
 $routes->post('admin/users/create', 'Admin::createUser');           // tambah admin
 $routes->post('admin/users/delete/(:segment)', 'Admin::deleteUser/$1'); // hapus admin
 
+// ============ NOTIF TELEGRAM ============= //
+$routes->get('notif/test', 'Notif::test');
+$routes->post('notif/sensor', 'Notif::sensorAlert');
 
 $routes->post('admin/delete-log', 'Admin::deleteLog'); // <-- penting
 $routes->post('admin/delete-logs', 'Admin::deleteLogs');
