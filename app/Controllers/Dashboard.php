@@ -50,8 +50,8 @@ class Dashboard extends BaseController
 
                 if (! $cache->get($key)) {
                     // sesuaikan key "tinggi" dan "arus" sesuai struktur firebase kamu
-                    $tinggi = $dev['tinggi'] ?? ($dev['water_level_cm'] ?? ($dev['distance_cm'] ?? '-'));
-                    $arus   = $dev['arus'] ?? ($dev['flow_lmin'] ?? '-');
+                    $tinggi = $dev['tinggi'] ?? ($dev['distance_cm'] ?? '-');
+                    $arus   = $dev['arus'] ?? ($dev['flow_lpm'] ?? '-');
 
                     $msg = "<b>🚨 STATUS DARURAT</b>\n"
                         . "<b>Node:</b> {$id}\n"
