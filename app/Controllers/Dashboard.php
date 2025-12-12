@@ -26,6 +26,8 @@ class Dashboard extends BaseController
 
     public function index()
     {
+        helper('telegram');
+        $cache = \Config\Services::cache();
         $firebase = new FirebaseModel();
         $devices  = $firebase->getDevices();   // NODE1, NODE2, ...
 
@@ -44,6 +46,26 @@ class Dashboard extends BaseController
 
             if (isset($statusRank[$label]) && $statusRank[$label] > $worstRank) {
                 $worstRank = $statusRank[$label];
+            }
+            if ($dev['label'] === 'DARURAT') {
+
+                $cache = \Config\Services::cache();
+                $nodeId = $id; // NODE1, NODE2
+                $key = 'tg_alert_' . $nodeId;
+
+                if (!$cache->get($key)) {
+
+                    $msg = "<b>🚨 STATUS DARURAT</b>\n"
+                        . "<b>Node:</b> {$nodeId}\n"
+                        . "<b>Ketinggian:</b> {$dev['tinggi']} cm\n"
+                        . "<b>Arus:</b> {$dev['arus']} L/min\n"
+                        . "<b>Waktu:</b> " . date('Y-m-d H:i:s');
+
+                    sendTelegramAlert($msg);
+
+                    // tahan 10 menit biar ga spam
+                    $cache->save($key, true, 600);
+                }
             }
         }
         unset($dev);
