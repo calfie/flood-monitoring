@@ -13,9 +13,9 @@ class Dashboard extends BaseController
             return '-';
         }
 
-        if ($distanceCm > 100) {
+        if ($distanceCm > 30) {
             return 'AMAN';
-        } elseif ($distanceCm >= 50) {
+        } elseif ($distanceCm >= 25) {
             return 'SIAGA';
         }
 

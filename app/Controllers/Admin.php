@@ -68,9 +68,9 @@ class Admin extends BaseController
             return '-';
         }
 
-        if ($distanceCm >= 100) {
+        if ($distanceCm >= 30) {
             return 'AMAN';
-        } elseif ($distanceCm >= 50) { // 50–99
+        } elseif ($distanceCm >= 25) { // 50–99
             return 'SIAGA';
         } else { // 0–49
             return 'DARURAT';
