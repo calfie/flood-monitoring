@@ -7,40 +7,12 @@ use App\Models\FirebaseModel;
 
 class Dashboard extends BaseController
 {
-    // Klasifikasi status berdasarkan ketinggian air
     private function classifyStatus(?float $distanceCm): string
     {
         if ($distanceCm === null || $distanceCm < 0) {
             return '-';
         }
 
-        // RULE
-        if ($distanceCm > 100) {
-            return 'AMAN';
-        } elseif ($distanceCm >= 50) {
-            return 'SIAGA';
-        }
-
-        return 'DARURAT';
-    }
-
-<?php
-
-namespace App\Controllers;
-
-use App\Controllers\BaseController;
-use App\Models\FirebaseModel;
-
-class Dashboard extends BaseController
-{
-    // Klasifikasi status berdasarkan ketinggian air
-    private function classifyStatus(?float $distanceCm): string
-    {
-        if ($distanceCm === null || $distanceCm < 0) {
-            return '-';
-        }
-
-        // RULE
         if ($distanceCm > 100) {
             return 'AMAN';
         } elseif ($distanceCm >= 50) {
@@ -53,40 +25,38 @@ class Dashboard extends BaseController
     public function index()
     {
         helper('telegram');
-        sendTelegramAlert('🔥 TEST TELEGRAM DARI SERVER');
 
-        $cache = \Config\Services::cache();
+        $cache    = \Config\Services::cache();
         $firebase = new FirebaseModel();
-        $devices  = $firebase->getDevices();   // NODE1, NODE2, ...
+        $devices  = $firebase->getDevices(); // NODE1, NODE2, ...
 
-        // Untuk hitung status keseluruhan (ambil yang paling “parah”)
-        $statusRank = ['AMAN' => 1, 'SIAGA' => 2, 'WASPADA' => 3];
+        // rank status (semakin besar semakin parah)
+        $statusRank = ['-' => 0, 'AMAN' => 1, 'SIAGA' => 2, 'DARURAT' => 3];
         $worstRank  = 0;
 
         foreach ($devices as $id => &$dev) {
-            // waktu tampilan (sementara dari server web)
             $dev['updated_ms_readable'] = date('Y-m-d H:i:s');
 
-            // baca ketinggian & tentukan label parameter
+            // sesuaikan key data dari firebase kamu
             $distance = isset($dev['distance_cm']) ? (float) $dev['distance_cm'] : null;
             $label    = $this->classifyStatus($distance);
             $dev['label_param'] = $label;
 
-            if (isset($statusRank[$label]) && $statusRank[$label] > $worstRank) {
-                $worstRank = $statusRank[$label];
-            }
-            if ($dev['label'] === 'DARURAT') {
+            $worstRank = max($worstRank, $statusRank[$label] ?? 0);
 
-                $cache = \Config\Services::cache();
-                $nodeId = $id; // NODE1, NODE2
-                $key = 'tg_alert_' . $nodeId;
+            // KIRIM TELEGRAM kalau DARURAT (anti spam per node)
+            if ($label === 'DARURAT') {
+                $key = 'tg_alert_' . $id;
 
-                if (!$cache->get($key)) {
+                if (! $cache->get($key)) {
+                    // sesuaikan key "tinggi" dan "arus" sesuai struktur firebase kamu
+                    $tinggi = $dev['tinggi'] ?? ($dev['water_level_cm'] ?? ($dev['distance_cm'] ?? '-'));
+                    $arus   = $dev['arus'] ?? ($dev['flow_lmin'] ?? '-');
 
                     $msg = "<b>🚨 STATUS DARURAT</b>\n"
-                        . "<b>Node:</b> {$nodeId}\n"
-                        . "<b>Ketinggian:</b> {$dev['tinggi']} cm\n"
-                        . "<b>Arus:</b> {$dev['arus']} L/min\n"
+                        . "<b>Node:</b> {$id}\n"
+                        . "<b>Ketinggian:</b> {$tinggi}\n"
+                        . "<b>Arus:</b> {$arus}\n"
                         . "<b>Waktu:</b> " . date('Y-m-d H:i:s');
 
                     sendTelegramAlert($msg);
@@ -98,10 +68,8 @@ class Dashboard extends BaseController
         }
         unset($dev);
 
-        $overallStatus = '-';
-        if ($worstRank > 0) {
-            $overallStatus = array_search($worstRank, $statusRank, true);
-        }
+        $overallStatus = array_search($worstRank, $statusRank, true);
+        if ($overallStatus === false) $overallStatus = '-';
 
         return view('dashboard/public', [
             'title'         => 'Dashboard Publik',
@@ -110,4 +78,3 @@ class Dashboard extends BaseController
         ]);
     }
 }
-
