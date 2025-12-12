@@ -24,6 +24,32 @@ class Dashboard extends BaseController
         return 'DARURAT';
     }
 
+<?php
+
+namespace App\Controllers;
+
+use App\Controllers\BaseController;
+use App\Models\FirebaseModel;
+
+class Dashboard extends BaseController
+{
+    // Klasifikasi status berdasarkan ketinggian air
+    private function classifyStatus(?float $distanceCm): string
+    {
+        if ($distanceCm === null || $distanceCm < 0) {
+            return '-';
+        }
+
+        // RULE
+        if ($distanceCm > 100) {
+            return 'AMAN';
+        } elseif ($distanceCm >= 50) {
+            return 'SIAGA';
+        }
+
+        return 'DARURAT';
+    }
+
     public function index()
     {
         helper('telegram');
@@ -84,3 +110,4 @@ class Dashboard extends BaseController
         ]);
     }
 }
+
