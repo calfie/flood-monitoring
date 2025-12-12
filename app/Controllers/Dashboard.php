@@ -7,174 +7,104 @@ use App\Models\FirebaseModel;
 
 class Dashboard extends BaseController
 {
-    /**
-     * Label ketinggian (berdasarkan distance_cm dari sensor)
-     * Catatan: ini sesuai aturan kamu:
-     * >= 30  => AMAN
-     * >= 25  => SIAGA
-     * <  25  => DARURAT
-     */
+    // ====== ATUR RULE SESUAI KAMU ======
     private function classifyDistance(?float $distanceCm): string
     {
-        if ($distanceCm === null || $distanceCm < 0) {
-            return '-';
-        }
+        if ($distanceCm === null || $distanceCm < 0) return '-';
 
-        if ($distanceCm >= 30) {
-            return 'AMAN';
-        } elseif ($distanceCm >= 25) {
-            return 'SIAGA';
-        }
-
+        // contoh rule kamu:
+        if ($distanceCm >= 30) return 'AMAN';
+        if ($distanceCm >= 25) return 'SIAGA';
         return 'DARURAT';
     }
 
-    /**
-     * Label arus (flow_lpm)
-     * >= 80 => DARURAT
-     * >= 40 => SIAGA
-     * <  40 => AMAN
-     */
     private function classifyFlow(?float $flowLpm): string
     {
-        if ($flowLpm === null || $flowLpm < 0) {
-            return '-';
-        }
+        if ($flowLpm === null || $flowLpm < 0) return '-';
 
-        if ($flowLpm >= 80) {
-            return 'DARURAT';
-        } elseif ($flowLpm >= 40) {
-            return 'SIAGA';
-        }
-
+        // contoh rule kamu:
+        if ($flowLpm >= 80) return 'DARURAT';
+        if ($flowLpm >= 40) return 'SIAGA';
         return 'AMAN';
     }
 
-    /**
-     * Kombinasi parameter -> status node (ambil yang paling parah)
-     */
+    // gabung jarak + arus → ambil yang paling parah
     private function classifyNode(?float $distanceCm, ?float $flowLpm): string
     {
         $d = $this->classifyDistance($distanceCm);
         $f = $this->classifyFlow($flowLpm);
 
-        // ranking tingkat bahaya
         $rank = ['-' => 0, 'AMAN' => 1, 'SIAGA' => 2, 'DARURAT' => 3];
 
         $maxRank = max($rank[$d] ?? 0, $rank[$f] ?? 0);
-
         if ($maxRank === 0) return '-';
 
         // cari label dari rank
-        foreach ($rank as $label => $r) {
-            if ($r === $maxRank) return $label;
-        }
-
-        return '-';
-    }
-
-    /**
-     * Ambil waktu dari data firebase (kalau ada), fallback ke waktu server
-     * Support:
-     * - logged_at: "2025-12-11 23:01:13" atau "2025-12-11T23:01:13"
-     * - logged_epoch_ms: 1733958073000
-     */
-    private function pickTimestampReadable(array $dev): string
-    {
-        // 1) logged_at string
-        if (!empty($dev['logged_at']) && is_string($dev['logged_at'])) {
-            $raw = trim($dev['logged_at']);
-            // normalize "2025-12-11T23:01:13" -> "2025-12-11 23:01:13"
-            $raw = str_replace('T', ' ', $raw);
-            return $raw;
-        }
-
-        // 2) logged_epoch_ms (milliseconds)
-        if (isset($dev['logged_epoch_ms']) && is_numeric($dev['logged_epoch_ms'])) {
-            $ms = (int)$dev['logged_epoch_ms'];
-            if ($ms > 0) {
-                $sec = (int) floor($ms / 1000);
-                return date('Y-m-d H:i:s', $sec);
-            }
-        }
-
-        // 3) fallback server time
-        return date('Y-m-d H:i:s');
+        return array_search($maxRank, $rank, true) ?: '-';
     }
 
     public function index()
     {
-        helper('telegram'); // pastikan helper telegram sudah ada
+        helper('telegram');
 
         $cache    = \Config\Services::cache();
         $firebase = new FirebaseModel();
+        $devices  = $firebase->getDevices(); // NODE1, NODE2, ...
 
-        // expected format:
-        // $devices['NODE1']['distance_cm'], $devices['NODE1']['flow_lpm'], ...
-        $devices = $firebase->getDevices();
-        if (!is_array($devices)) $devices = [];
+        // untuk status keseluruhan
+        $statusRank = ['-' => 0, 'AMAN' => 1, 'SIAGA' => 2, 'DARURAT' => 3];
+        $worstRank  = 0;
 
-        $rank = ['-' => 0, 'AMAN' => 1, 'SIAGA' => 2, 'DARURAT' => 3];
-        $worstRank = 0;
+        foreach ($devices as $nodeId => &$dev) {
 
-        foreach ($devices as $id => &$dev) {
-            if (!is_array($dev)) $dev = [];
+            // ====== ambil nilai sesuai key firebase kamu ======
+            $distance = isset($dev['distance_cm']) ? (float) $dev['distance_cm'] : null;
+            $flow     = isset($dev['flow_lpm'])    ? (float) $dev['flow_lpm']    : null;
 
-            // === ambil nilai dari firebase (sesuaikan key kalau beda) ===
-            $distance = isset($dev['distance_cm']) && is_numeric($dev['distance_cm'])
-                ? (float)$dev['distance_cm']
-                : null;
+            // ====== timestamp data dari firebase (WAJIB buat anti-duplikat) ======
+            // pastikan ini bener-bener berubah tiap data baru masuk
+            $loggedAt = $dev['logged_at'] ?? null; // contoh: "2025-12-12 15:10:05"
+            if (!$loggedAt) {
+                // fallback kalau belum ada (tidak ideal, tapi biar aman)
+                $loggedAt = date('Y-m-d H:i:s');
+            }
 
-            $flow = isset($dev['flow_lpm']) && is_numeric($dev['flow_lpm'])
-                ? (float)$dev['flow_lpm']
-                : null;
+            // ====== label param utk ditampilkan ======
+            $label = $this->classifyNode($distance, $flow);
+            $dev['label_param'] = $label;
 
-            // === label per-parameter ===
-            $dev['label_distance'] = $this->classifyDistance($distance);
-            $dev['label_flow']     = $this->classifyFlow($flow);
+            // ====== buat tampilan waktu di card: pakai loggedAt ======
+            $dev['updated_ms_readable'] = $loggedAt;
 
-            // === label node (worst-case) ===
-            $dev['label_node'] = $this->classifyNode($distance, $flow);
+            // update status overall
+            $worstRank = max($worstRank, $statusRank[$label] ?? 0);
 
-            // buat kompatibel sama view lama kamu kalau masih pakai label_param
-            $dev['label_param'] = $dev['label_node'];
+            // ====== TELEGRAM: hanya kalau DARURAT + hanya kalau data baru ======
+            if ($label === 'DARURAT') {
+                // kunci unik: node + waktu data
+                // jadi kalau refresh 100x, tetap 1x kirim selama logged_at sama
+                $dedupeKey = 'tg_sent_' . $nodeId . '_' . md5((string) $loggedAt);
 
-            // === timestamp tampil (ambil dari firebase kalau ada) ===
-            $dev['updated_readable'] = $this->pickTimestampReadable($dev);
-
-            // overall status (ambil yang paling parah dari semua node)
-            $worstRank = max($worstRank, $rank[$dev['label_node']] ?? 0);
-
-            // === Telegram notif kalau DARURAT (anti-spam per node) ===
-            if ($dev['label_node'] === 'DARURAT') {
-                $cacheKey = 'tg_alert_' . $id;
-
-                if (!$cache->get($cacheKey)) {
+                if (!$cache->get($dedupeKey)) {
                     $msg = "<b>🚨 STATUS DARURAT</b>\n"
-                        . "<b>Node:</b> {$id}\n"
-                        . "<b>Ketinggian (cm):</b> " . ($distance ?? '-') . "\n"
-                        . "<b>Arus (L/min):</b> " . ($flow ?? '-') . "\n"
-                        . "<b>Waktu:</b> " . $dev['updated_readable'];
+                        . "<b>Node:</b> {$nodeId}\n"
+                        . "<b>Ketinggian:</b> " . ($dev['distance_cm'] ?? '-') . " cm\n"
+                        . "<b>Arus:</b> " . ($dev['flow_lpm'] ?? '-') . " L/min\n"
+                        . "<b>Waktu:</b> {$loggedAt}";
 
                     sendTelegramAlert($msg);
 
-                    // tahan 10 menit biar ga spam
-                    $cache->save($cacheKey, true, 600);
+                    // simpan penanda. TTL bebas, yang penting cukup lama utk mencegah duplikat.
+                    // 7 hari aman (kalau logged_at unik, TTL berapapun ga masalah).
+                    $cache->save($dedupeKey, 1, 60 * 60 * 24 * 7);
                 }
             }
         }
         unset($dev);
 
-        // status keseluruhan
-        $overallStatus = '-';
-        foreach ($rank as $label => $r) {
-            if ($r === $worstRank) {
-                $overallStatus = $label;
-                break;
-            }
-        }
+        $overallStatus = array_search($worstRank, $statusRank, true);
+        if ($overallStatus === false) $overallStatus = '-';
 
-        // sesuaikan ini dengan view publik kamu
         return view('dashboard/public', [
             'title'         => 'Dashboard Publik',
             'nodes'         => $devices,
