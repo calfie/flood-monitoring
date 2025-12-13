@@ -480,6 +480,22 @@ class Admin extends BaseController
 
         return $this->response->setJSON($outClean);
     }
+    public function logSignal()
+    {
+        if (!session()->get('admin_logged_in')) {
+            return redirect()->to(base_url('admin/login'));
+        }
+
+        $firebase = new FirebaseModel();
+        $devices  = $firebase->getDevices();
+        $nodeIds  = array_keys($devices ?: []);
+
+        return view('admin/log_signal', [
+            'title'    => 'Log RSSI & SNR',
+            'username' => session()->get('admin_username') ?? 'admin',
+            'nodeIds'  => $nodeIds,
+        ]);
+    }
 
     // ================== HAPUS LOG (1 & BANYAK) ==================
 
@@ -528,6 +544,97 @@ class Admin extends BaseController
             'message' => 'Log berhasil dihapus',
         ]);
     }
+    public function loadSignal()
+    {
+        if (!session()->get('admin_logged_in')) {
+            return $this->response->setStatusCode(401)->setJSON(['error' => 'Unauthorized']);
+        }
+
+        $node  = $this->request->getGet('node');
+        $range = $this->request->getGet('range') ?: '30d';
+
+        if (!$node) {
+            return $this->response->setJSON([]);
+        }
+
+        $firebase = new FirebaseModel();
+        $rows     = $firebase->getHistory($node); // ambil history yang sama
+
+        $tz    = new DateTimeZone('Asia/Jakarta');
+        $now   = new DateTimeImmutable('now', $tz);
+        $nowTs = $now->getTimestamp();
+
+        // range filter
+        $startTs = null;
+        $endTs   = $nowTs;
+
+        if ($range === 'today') {
+            $startTs = $now->setTime(0, 0, 0)->getTimestamp();
+        } elseif ($range === '7d') {
+            $startTs = $now->sub(new DateInterval('P7D'))->getTimestamp();
+        } elseif ($range === '30d') {
+            $startTs = $now->sub(new DateInterval('P30D'))->getTimestamp();
+        }
+
+        $out = [];
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) continue;
+
+            $loggedAtStr = $row['logged_at'] ?? null;
+            $dt = null;
+            $ts = null;
+
+            if ($loggedAtStr) {
+                $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $loggedAtStr, $tz);
+                if ($dt !== false) $ts = $dt->getTimestamp();
+            }
+
+            // fallback kalau log lama pakai time_node
+            if (!$dt && !empty($row['time_node'])) {
+                $fakeStr = $now->format('Y-m-d') . ' ' . $row['time_node'];
+                $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $fakeStr, $tz);
+                if ($dt !== false) $ts = $dt->getTimestamp();
+            }
+
+            if ($ts !== null && $startTs !== null) {
+                if ($ts < $startTs || $ts > $endTs) continue;
+            }
+
+            $dateStr = '-';
+            $timeStr = '-';
+
+            if ($dt) {
+                $dateStr = $dt->format('d/m/Y');
+                $timeStr = $dt->format('H.i.s');
+            } elseif (!empty($row['time_node'])) {
+                $timeStr = $row['time_node'];
+            }
+
+            $out[] = [
+                'ts'   => $ts ?? 0,
+                'key'  => $row['key'] ?? '',
+                'date' => $dateStr,
+                'time' => $timeStr,
+                'node' => $node,
+
+                // ambil dari history
+                'rssi' => isset($row['rssi_dbm']) ? (string)$row['rssi_dbm'] : '-',
+                'snr'  => isset($row['snr_db'])   ? (string)$row['snr_db']   : '-',
+
+            ];
+        }
+
+        usort($out, fn($a, $b) => ($b['ts'] <=> $a['ts']));
+
+        $outClean = array_map(function ($row) {
+            unset($row['ts']);
+            return $row;
+        }, $out);
+
+        return $this->response->setJSON($outClean);
+    }
+
 
     /**
      * Hapus banyak log sekaligus

@@ -42,3 +42,9 @@ $routes->post('admin/delete-log', 'Admin::deleteLog'); // <-- penting
 $routes->post('admin/delete-logs', 'Admin::deleteLogs');
 
 // app/Config/Routes.php
+$routes->get('admin/log-signal', 'Admin::logSignal');
+$routes->get('admin/load-signal', 'Admin::loadSignal');
+
+// optional kalau mau tombol hapus khusus (bisa reuse deleteLog juga)
+$routes->post('admin/delete-signal', 'Admin::deleteLog');
+$routes->post('admin/delete-signals', 'Admin::deleteLogs');

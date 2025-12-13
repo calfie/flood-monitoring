@@ -32,6 +32,12 @@
     </li>
 
     <li class="nav-item">
+        <a class="nav-link" href="<?= base_url('admin/log-signal'); ?>">
+            <span>Log RSSI & SNR</span>
+        </a>
+    </li>
+
+    <li class="nav-item">
         <a class="nav-link" href="<?= base_url('admin/users'); ?>">
             <span>Kelola Admin</span>
         </a>
