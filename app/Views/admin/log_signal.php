@@ -2,7 +2,6 @@
 
 <?= $this->section('sidebar'); ?>
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
-
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?= base_url('/admin'); ?>">
         <div class="sidebar-brand-text mx-3">ENYODERAMIL</div>
     </a>
@@ -10,33 +9,23 @@
     <hr class="sidebar-divider my-0">
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin'); ?>">
-            <span>Dashboard</span>
-        </a>
+        <a class="nav-link" href="<?= base_url('admin'); ?>"><span>Dashboard</span></a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin/log-sensor'); ?>">
-            <span>Log Data Sensor</span>
-        </a>
+        <a class="nav-link" href="<?= base_url('admin/log-sensor'); ?>"><span>Log Data Sensor</span></a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin/log-qos'); ?>">
-            <span>Log QoS Jaringan</span>
-        </a>
+        <a class="nav-link" href="<?= base_url('admin/log-qos'); ?>"><span>Log QoS Jaringan</span></a>
     </li>
 
     <li class="nav-item active">
-        <a class="nav-link" href="<?= base_url('admin/log-signal'); ?>">
-            <span>Log Signal (RSSI & SNR)</span>
-        </a>
+        <a class="nav-link" href="<?= base_url('admin/log-signal'); ?>"><span>Log Signal (RSSI & SNR)</span></a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin/users'); ?>">
-            <span>Kelola Admin</span>
-        </a>
+        <a class="nav-link" href="<?= base_url('admin/users'); ?>"><span>Kelola Admin</span></a>
     </li>
 </ul>
 <?= $this->endSection(); ?>
@@ -99,16 +88,15 @@
                         <th style="width: 120px;">Tanggal</th>
                         <th style="width: 90px;">Jam</th>
                         <th style="width: 80px;">Node</th>
-                        <th style="width: 110px;">Ketinggian</th>
-                        <th style="width: 110px;">Arus</th>
                         <th style="width: 110px;">RSSI (dBm)</th>
                         <th style="width: 110px;">SNR (dB)</th>
+                        <th style="width: 140px;">Label Signal</th>
                         <th style="width: 90px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="logSignalBody">
                     <tr>
-                        <td colspan="10" class="text-center text-muted">Belum ada data log.</td>
+                        <td colspan="9" class="text-center text-muted">Belum ada data log.</td>
                     </tr>
                 </tbody>
             </table>
@@ -125,7 +113,7 @@
         const tbody = document.getElementById('logSignalBody');
 
         if (!node) {
-            tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">Tidak ada node yang dipilih.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Tidak ada node yang dipilih.</td></tr>`;
             return;
         }
 
@@ -142,44 +130,49 @@
             const data = await res.json();
 
             if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">Belum ada data log untuk rentang waktu ini.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">Belum ada data log untuk rentang waktu ini.</td></tr>`;
                 return;
             }
 
             let html = '';
             data.forEach((row, index) => {
                 const no = index + 1;
+                const label = row.label_signal ?? '-';
+                let badge = 'badge-secondary';
+
+                if (label === 'BAIK') badge = 'badge-success';
+                else if (label === 'SEDANG') badge = 'badge-warning';
+                else if (label === 'BURUK') badge = 'badge-danger';
+
                 html += `
-          <tr>
-            <td class="text-center">
-              <input type="checkbox" class="row-check-signal" data-key="${row.key ?? ''}">
-            </td>
-            <td>${no}</td>
-            <td>${row.date ?? '-'}</td>
-            <td>${row.time ?? '-'}</td>
-            <td>${row.node ?? '-'}</td>
-            <td>${row.distance ?? '-'}</td>
-            <td>${row.flow ?? '-'}</td>
-            <td>${row.rssi ?? '-'}</td>
-            <td>${row.snr ?? '-'}</td>
-            <td>
-              <button type="button" class="btn btn-sm btn-danger"
-                onclick="deleteSignal('${row.node ?? ''}', '${row.key ?? ''}')">
-                Hapus
-              </button>
-            </td>
-          </tr>
-        `;
+                <tr>
+                    <td class="text-center">
+                        <input type="checkbox" class="row-check-signal" data-key="${row.key ?? ''}">
+                    </td>
+                    <td>${no}</td>
+                    <td>${row.date ?? '-'}</td>
+                    <td>${row.time ?? '-'}</td>
+                    <td>${row.node ?? '-'}</td>
+                    <td>${row.rssi ?? '-'}</td>
+                    <td>${row.snr ?? '-'}</td>
+                    <td><span class="badge ${badge}">${label}</span></td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger"
+                            onclick="deleteSignal('${row.node ?? ''}', '${row.key ?? ''}')">
+                            Hapus
+                        </button>
+                    </td>
+                </tr>
+            `;
             });
 
             tbody.innerHTML = html;
-
             const checkAll = document.getElementById('checkAllSignal');
             if (checkAll) checkAll.checked = false;
 
         } catch (err) {
             console.error('Gagal load log signal:', err);
-            tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Terjadi kesalahan saat mengambil data.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger">Terjadi kesalahan saat mengambil data.</td></tr>`;
         }
     }
 
@@ -187,25 +180,29 @@
         if (!key) return alert('Key log tidak ditemukan.');
         if (!confirm('Yakin ingin menghapus data signal ini?')) return;
 
-        const body = 'node=' + encodeURIComponent(node) + '&key=' + encodeURIComponent(key);
+        try {
+            const res = await fetch("<?= base_url('admin/delete-log'); ?>", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'node=' + encodeURIComponent(node) + '&key=' + encodeURIComponent(key)
+            });
 
-        const res = await fetch("<?= base_url('admin/delete-signal-log'); ?>", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body
-        });
-
-        const out = await res.json();
-        if (out.status === 'ok') loadLogSignal();
-        else alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
+            const out = await res.json();
+            if (out.status === 'ok') loadLogSignal();
+            else alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan saat menghapus.');
+        }
     }
 
     async function bulkDeleteSignal() {
         const node = document.getElementById('nodeFilter').value;
         const checks = document.querySelectorAll('#logSignalBody .row-check-signal:checked');
+
         if (!node) return alert('Pilih node terlebih dahulu.');
         if (checks.length === 0) return alert('Pilih minimal satu data.');
 
@@ -214,21 +211,26 @@
         const keys = Array.from(checks).map(cb => cb.dataset.key).filter(Boolean);
         const body = 'node=' + encodeURIComponent(node) + keys.map(k => '&keys[]=' + encodeURIComponent(k)).join('');
 
-        const res = await fetch("<?= base_url('admin/delete-signal-logs'); ?>", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body
-        });
+        try {
+            const res = await fetch("<?= base_url('admin/delete-logs'); ?>", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body
+            });
 
-        const out = await res.json();
-        if (out.status === 'ok') {
-            alert('Berhasil menghapus ' + (out.deleted ?? 0) + ' data.');
-            loadLogSignal();
-        } else {
-            alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
+            const out = await res.json();
+            if (out.status === 'ok') {
+                alert('Berhasil menghapus ' + (out.deleted ?? 0) + ' data.');
+                loadLogSignal();
+            } else {
+                alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan saat bulk delete.');
         }
     }
 

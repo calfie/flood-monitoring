@@ -558,13 +558,13 @@ class Admin extends BaseController
         }
 
         $firebase = new FirebaseModel();
-        $rows     = $firebase->getHistory($node); // ambil history yang sama
+        $rows     = $firebase->getHistory($node);
 
         $tz    = new DateTimeZone('Asia/Jakarta');
         $now   = new DateTimeImmutable('now', $tz);
         $nowTs = $now->getTimestamp();
 
-        // range filter
+        // tentukan batas waktu range
         $startTs = null;
         $endTs   = $nowTs;
 
@@ -572,7 +572,7 @@ class Admin extends BaseController
             $startTs = $now->setTime(0, 0, 0)->getTimestamp();
         } elseif ($range === '7d') {
             $startTs = $now->sub(new DateInterval('P7D'))->getTimestamp();
-        } elseif ($range === '30d') {
+        } else { // default 30d
             $startTs = $now->sub(new DateInterval('P30D'))->getTimestamp();
         }
 
@@ -585,18 +585,20 @@ class Admin extends BaseController
             $dt = null;
             $ts = null;
 
+            // 1) pakai logged_at (recommended)
             if ($loggedAtStr) {
                 $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $loggedAtStr, $tz);
                 if ($dt !== false) $ts = $dt->getTimestamp();
             }
 
-            // fallback kalau log lama pakai time_node
+            // 2) fallback kalau log lama pakai time_node (anggap hari ini)
             if (!$dt && !empty($row['time_node'])) {
                 $fakeStr = $now->format('Y-m-d') . ' ' . $row['time_node'];
                 $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $fakeStr, $tz);
                 if ($dt !== false) $ts = $dt->getTimestamp();
             }
 
+            // filter range
             if ($ts !== null && $startTs !== null) {
                 if ($ts < $startTs || $ts > $endTs) continue;
             }
@@ -611,30 +613,38 @@ class Admin extends BaseController
                 $timeStr = $row['time_node'];
             }
 
+            // ambil sinyal dari history
+            $rssiVal = isset($row['rssi_dbm']) ? (float)$row['rssi_dbm'] : null;
+            $snrVal  = isset($row['snr_db'])   ? (float)$row['snr_db']   : null;
+
+            $labelRssi   = $this->classifyRssi($rssiVal);
+            $labelSnr    = $this->classifySnr($snrVal);
+            $labelSignal = $this->combineSignalLabel($labelRssi, $labelSnr);
+
             $out[] = [
-                'ts'   => $ts ?? 0,
-                'key'  => $row['key'] ?? '',
-                'date' => $dateStr,
-                'time' => $timeStr,
-                'node' => $node,
-
-                // ambil dari history
-                'rssi' => isset($row['rssi_dbm']) ? (string)$row['rssi_dbm'] : '-',
-                'snr'  => isset($row['snr_db'])   ? (string)$row['snr_db']   : '-',
-
+                'ts'           => $ts ?? 0,
+                'key'          => $row['key'] ?? '',
+                'date'         => $dateStr,
+                'time'         => $timeStr,
+                'node'         => $node,
+                'rssi'         => isset($row['rssi_dbm']) ? (string)$row['rssi_dbm'] : '-',
+                'snr'          => isset($row['snr_db'])   ? (string)$row['snr_db']   : '-',
+                'label_rssi'   => $labelRssi,
+                'label_snr'    => $labelSnr,
+                'label_signal' => $labelSignal,
             ];
         }
 
         usort($out, fn($a, $b) => ($b['ts'] <=> $a['ts']));
 
-        $outClean = array_map(function ($row) {
-            unset($row['ts']);
-            return $row;
+        // buang ts sebelum dikirim ke client
+        $outClean = array_map(function ($r) {
+            unset($r['ts']);
+            return $r;
         }, $out);
 
         return $this->response->setJSON($outClean);
     }
-
 
     /**
      * Hapus banyak log sekaligus

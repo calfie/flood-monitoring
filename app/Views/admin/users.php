@@ -116,7 +116,6 @@
                     <label for="role">Role</label>
                     <select name="role" id="role" class="form-control">
                         <option value="admin" selected>admin</option>
-                        <option value="superadmin">superadmin</option>
                     </select>
                 </div>
                 <div class="form-group col-md-2 d-flex align-items-end">
