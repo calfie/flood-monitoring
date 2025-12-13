@@ -480,23 +480,7 @@ class Admin extends BaseController
 
         return $this->response->setJSON($outClean);
     }
-    public function logSignal()
-    {
-        if (!session()->get('admin_logged_in')) {
-            return redirect()->to(base_url('admin/login'));
-        }
-
-        $firebase = new FirebaseModel();
-        $devices  = $firebase->getDevices();
-        $nodeIds  = array_keys($devices ?: []);
-
-        return view('admin/log_signal', [
-            'title'    => 'Log RSSI & SNR',
-            'username' => session()->get('admin_username') ?? 'admin',
-            'nodeIds'  => $nodeIds,
-        ]);
-    }
-
+    
     // ================== HAPUS LOG (1 & BANYAK) ==================
 
     /**
@@ -544,6 +528,29 @@ class Admin extends BaseController
             'message' => 'Log berhasil dihapus',
         ]);
     }
+    // ================== LOG SIGNAL (RSSI & SNR) ==================
+
+    public function logSignal()
+    {
+        if (!session()->get('admin_logged_in')) {
+            return redirect()->to(base_url('admin/login'));
+        }
+
+        $firebase = new FirebaseModel();
+        $devices  = $firebase->getDevices();
+        $nodeIds  = array_keys($devices ?: []);
+
+        return view('admin/log_signal', [
+            'title'    => 'Log Signal (RSSI & SNR)',
+            'username' => session()->get('admin_username') ?? 'admin',
+            'nodeIds'  => $nodeIds,
+        ]);
+    }
+
+    /**
+     * AJAX: /admin/load-signal?node=NODE1&range=today|7d|30d
+     * return JSON array untuk tabel log_signal.
+     */
     public function loadSignal()
     {
         if (!session()->get('admin_logged_in')) {
@@ -558,13 +565,16 @@ class Admin extends BaseController
         }
 
         $firebase = new FirebaseModel();
-        $rows     = $firebase->getHistory($node);
+
+        // NOTE: ini pakai getHistory($node) dari model kamu.
+        // Kalau struktur history kamu bukan history/NODE1, pastikan model kamu sudah support fallback.
+        $rows = $firebase->getHistory($node);
 
         $tz    = new DateTimeZone('Asia/Jakarta');
         $now   = new DateTimeImmutable('now', $tz);
         $nowTs = $now->getTimestamp();
 
-        // tentukan batas waktu range
+        // batas waktu range
         $startTs = null;
         $endTs   = $nowTs;
 
@@ -581,17 +591,17 @@ class Admin extends BaseController
         foreach ($rows as $row) {
             if (!is_array($row)) continue;
 
-            $loggedAtStr = $row['logged_at'] ?? null;
+            // waktu
+            $loggedAtStr = $row['logged_at'] ?? null; // <- pastikan key ini ada
             $dt = null;
             $ts = null;
 
-            // 1) pakai logged_at (recommended)
             if ($loggedAtStr) {
                 $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $loggedAtStr, $tz);
                 if ($dt !== false) $ts = $dt->getTimestamp();
             }
 
-            // 2) fallback kalau log lama pakai time_node (anggap hari ini)
+            // fallback untuk data lama: time_node (anggap hari ini)
             if (!$dt && !empty($row['time_node'])) {
                 $fakeStr = $now->format('Y-m-d') . ' ' . $row['time_node'];
                 $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $fakeStr, $tz);
@@ -613,7 +623,8 @@ class Admin extends BaseController
                 $timeStr = $row['time_node'];
             }
 
-            // ambil sinyal dari history
+            // ambil rssi & snr dari history
+            // ganti key ini kalau di firebase beda:
             $rssiVal = isset($row['rssi_dbm']) ? (float)$row['rssi_dbm'] : null;
             $snrVal  = isset($row['snr_db'])   ? (float)$row['snr_db']   : null;
 
@@ -629,15 +640,14 @@ class Admin extends BaseController
                 'node'         => $node,
                 'rssi'         => isset($row['rssi_dbm']) ? (string)$row['rssi_dbm'] : '-',
                 'snr'          => isset($row['snr_db'])   ? (string)$row['snr_db']   : '-',
+                'label_signal' => $labelSignal,
                 'label_rssi'   => $labelRssi,
                 'label_snr'    => $labelSnr,
-                'label_signal' => $labelSignal,
             ];
         }
 
         usort($out, fn($a, $b) => ($b['ts'] <=> $a['ts']));
 
-        // buang ts sebelum dikirim ke client
         $outClean = array_map(function ($r) {
             unset($r['ts']);
             return $r;
@@ -645,6 +655,41 @@ class Admin extends BaseController
 
         return $this->response->setJSON($outClean);
     }
+
+    // ====== SIGNAL LABELING (UBAH SESUKA KAMU) ======
+
+    private function classifyRssi(?float $rssiDbm): string
+    {
+        if ($rssiDbm === null) return '-';
+
+        // makin dekat ke 0 makin bagus
+        if ($rssiDbm >= -70)  return 'BAIK';
+        if ($rssiDbm >= -100) return 'SEDANG';
+        return 'BURUK';
+    }
+
+    private function classifySnr(?float $snrDb): string
+    {
+        if ($snrDb === null) return '-';
+
+        // makin besar makin bagus
+        if ($snrDb >= 10) return 'BAIK';
+        if ($snrDb >= 0)  return 'SEDANG';
+        return 'BURUK';
+    }
+
+    private function combineSignalLabel(string $labelRssi, string $labelSnr): string
+    {
+        // ambil yang paling buruk
+        $rank = ['-' => 0, 'BAIK' => 1, 'SEDANG' => 2, 'BURUK' => 3];
+
+        $r1 = $rank[$labelRssi] ?? 0;
+        $r2 = $rank[$labelSnr] ?? 0;
+
+        $worst = max($r1, $r2);
+        return array_search($worst, $rank, true) ?: '-';
+    }
+
 
     /**
      * Hapus banyak log sekaligus

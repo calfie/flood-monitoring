@@ -1,7 +1,10 @@
 <?= $this->extend('layouts/main'); ?>
 
+<?php // ========== SIDEBAR ========== 
+?>
 <?= $this->section('sidebar'); ?>
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?= base_url('/admin'); ?>">
         <div class="sidebar-brand-text mx-3">ENYODERAMIL</div>
     </a>
@@ -9,27 +12,39 @@
     <hr class="sidebar-divider my-0">
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin'); ?>"><span>Dashboard</span></a>
+        <a class="nav-link" href="<?= base_url('admin'); ?>">
+            <span>Dashboard</span>
+        </a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin/log-sensor'); ?>"><span>Log Data Sensor</span></a>
+        <a class="nav-link" href="<?= base_url('admin/log-sensor'); ?>">
+            <span>Log Data Sensor</span>
+        </a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin/log-qos'); ?>"><span>Log QoS Jaringan</span></a>
+        <a class="nav-link" href="<?= base_url('admin/log-qos'); ?>">
+            <span>Log QoS Jaringan</span>
+        </a>
     </li>
 
     <li class="nav-item active">
-        <a class="nav-link" href="<?= base_url('admin/log-signal'); ?>"><span>Log Signal (RSSI & SNR)</span></a>
+        <a class="nav-link" href="<?= base_url('admin/log-signal'); ?>">
+            <span>Log Signal (RSSI & SNR)</span>
+        </a>
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="<?= base_url('admin/users'); ?>"><span>Kelola Admin</span></a>
+        <a class="nav-link" href="<?= base_url('admin/users'); ?>">
+            <span>Kelola Admin</span>
+        </a>
     </li>
 </ul>
 <?= $this->endSection(); ?>
 
+<?php // ========== TOPBAR ========== 
+?>
 <?= $this->section('topbar'); ?>
 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
     <div class="w-100 text-center">
@@ -37,18 +52,24 @@
             Log Signal (RSSI & SNR)
         </span>
     </div>
+
     <ul class="navbar-nav ml-auto">
         <li class="nav-item mr-3 d-none d-lg-block align-self-center">
             <span class="text-muted small"><?= esc($username ?? 'admin'); ?></span>
         </li>
         <li class="nav-item">
-            <a href="<?= base_url('admin/logout'); ?>" class="btn btn-sm btn-outline-danger">Logout</a>
+            <a href="<?= base_url('admin/logout'); ?>" class="btn btn-sm btn-outline-danger">
+                Logout
+            </a>
         </li>
     </ul>
 </nav>
 <?= $this->endSection(); ?>
 
+<?php // ========== CONTENT ========== 
+?>
 <?= $this->section('content'); ?>
+
 <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-primary">Log Signal</h6>
@@ -90,7 +111,7 @@
                         <th style="width: 80px;">Node</th>
                         <th style="width: 110px;">RSSI (dBm)</th>
                         <th style="width: 110px;">SNR (dB)</th>
-                        <th style="width: 140px;">Label Signal</th>
+                        <th style="width: 120px;">Label Signal</th>
                         <th style="width: 90px;">Aksi</th>
                     </tr>
                 </thead>
@@ -103,8 +124,11 @@
         </div>
     </div>
 </div>
+
 <?= $this->endSection(); ?>
 
+<?php // ========== SCRIPTS ========== 
+?>
 <?= $this->section('scripts'); ?>
 <script>
     async function loadLogSignal() {
@@ -137,36 +161,43 @@
             let html = '';
             data.forEach((row, index) => {
                 const no = index + 1;
+                const key = row.key ?? '';
+                const date = row.date ?? '-';
+                const time = row.time ?? '-';
+                const nodeId = row.node ?? '-';
+                const rssi = row.rssi ?? '-';
+                const snr = row.snr ?? '-';
                 const label = row.label_signal ?? '-';
-                let badge = 'badge-secondary';
 
-                if (label === 'BAIK') badge = 'badge-success';
-                else if (label === 'SEDANG') badge = 'badge-warning';
-                else if (label === 'BURUK') badge = 'badge-danger';
+                let labelClass = 'badge-secondary';
+                if (label === 'BAIK') labelClass = 'badge-success';
+                else if (label === 'SEDANG') labelClass = 'badge-warning';
+                else if (label === 'BURUK') labelClass = 'badge-danger';
 
                 html += `
-                <tr>
-                    <td class="text-center">
-                        <input type="checkbox" class="row-check-signal" data-key="${row.key ?? ''}">
-                    </td>
-                    <td>${no}</td>
-                    <td>${row.date ?? '-'}</td>
-                    <td>${row.time ?? '-'}</td>
-                    <td>${row.node ?? '-'}</td>
-                    <td>${row.rssi ?? '-'}</td>
-                    <td>${row.snr ?? '-'}</td>
-                    <td><span class="badge ${badge}">${label}</span></td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-danger"
-                            onclick="deleteSignal('${row.node ?? ''}', '${row.key ?? ''}')">
-                            Hapus
-                        </button>
-                    </td>
-                </tr>
+            <tr>
+                <td class="text-center">
+                    <input type="checkbox" class="row-check-signal" data-key="${key}">
+                </td>
+                <td>${no}</td>
+                <td>${date}</td>
+                <td>${time}</td>
+                <td>${nodeId}</td>
+                <td>${rssi}</td>
+                <td>${snr}</td>
+                <td><span class="badge ${labelClass}">${label}</span></td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger"
+                        onclick="deleteSignal('${nodeId}', '${key}')">
+                        Hapus
+                    </button>
+                </td>
+            </tr>
             `;
             });
 
             tbody.innerHTML = html;
+
             const checkAll = document.getElementById('checkAllSignal');
             if (checkAll) checkAll.checked = false;
 
@@ -180,30 +211,28 @@
         if (!key) return alert('Key log tidak ditemukan.');
         if (!confirm('Yakin ingin menghapus data signal ini?')) return;
 
-        try {
-            const res = await fetch("<?= base_url('admin/delete-log'); ?>", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: 'node=' + encodeURIComponent(node) + '&key=' + encodeURIComponent(key)
-            });
+        const body = 'node=' + encodeURIComponent(node) + '&key=' + encodeURIComponent(key);
 
-            const out = await res.json();
-            if (out.status === 'ok') loadLogSignal();
-            else alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
-        } catch (err) {
-            console.error(err);
-            alert('Terjadi kesalahan saat menghapus.');
-        }
+        // kalau kamu mau pakai deleteLog yang sudah ada (admin/delete-log), tinggal ganti endpoint ini:
+        const res = await fetch("<?= base_url('admin/delete-log'); ?>", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body
+        });
+
+        const out = await res.json();
+        if (out.status === 'ok') loadLogSignal();
+        else alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
     }
 
     async function bulkDeleteSignal() {
         const node = document.getElementById('nodeFilter').value;
-        const checks = document.querySelectorAll('#logSignalBody .row-check-signal:checked');
-
         if (!node) return alert('Pilih node terlebih dahulu.');
+
+        const checks = document.querySelectorAll('#logSignalBody .row-check-signal:checked');
         if (checks.length === 0) return alert('Pilih minimal satu data.');
 
         if (!confirm('Yakin ingin menghapus data signal yang terpilih?')) return;
@@ -211,26 +240,22 @@
         const keys = Array.from(checks).map(cb => cb.dataset.key).filter(Boolean);
         const body = 'node=' + encodeURIComponent(node) + keys.map(k => '&keys[]=' + encodeURIComponent(k)).join('');
 
-        try {
-            const res = await fetch("<?= base_url('admin/delete-logs'); ?>", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body
-            });
+        // kalau kamu mau pakai deleteLogs yang sudah ada (admin/delete-logs), endpointnya ini:
+        const res = await fetch("<?= base_url('admin/delete-logs'); ?>", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body
+        });
 
-            const out = await res.json();
-            if (out.status === 'ok') {
-                alert('Berhasil menghapus ' + (out.deleted ?? 0) + ' data.');
-                loadLogSignal();
-            } else {
-                alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Terjadi kesalahan saat bulk delete.');
+        const out = await res.json();
+        if (out.status === 'ok') {
+            alert('Berhasil menghapus ' + (out.deleted ?? 0) + ' data.');
+            loadLogSignal();
+        } else {
+            alert('Gagal menghapus: ' + (out.message ?? 'unknown'));
         }
     }
 
@@ -238,6 +263,7 @@
         document.getElementById('nodeFilter')?.addEventListener('change', loadLogSignal);
         document.getElementById('rangeFilter')?.addEventListener('change', loadLogSignal);
         document.getElementById('btnDeleteSelectedSignal')?.addEventListener('click', bulkDeleteSignal);
+
         document.getElementById('checkAllSignal')?.addEventListener('change', function() {
             document.querySelectorAll('#logSignalBody .row-check-signal')
                 .forEach(cb => cb.checked = this.checked);
