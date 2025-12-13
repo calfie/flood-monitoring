@@ -15,7 +15,7 @@
 
     <!-- SB Admin 2 main CSS -->
     <link rel="stylesheet"
-        href="<?= base_url('sbadmin/css/sb-admin-2.min.css'); ?>">
+        href="<?= base_url('sbadmin/css/sb-admin-2.css'); ?>">
 
 </head>
 
