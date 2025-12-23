@@ -194,7 +194,6 @@
                 const ploss = row.ploss ?? '-';
                 const thput = row.thput ?? '-';
                 const jitter = row.jitter_ms ?? '-';
-                const status = row.status ?? '-';
                 const key = row.key ?? '';
                 html += `
                     <tr>
