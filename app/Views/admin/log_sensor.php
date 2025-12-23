@@ -191,13 +191,8 @@
                 const dist = row.distance ?? '-';
                 const flow = row.flow ?? '-';
                 const buzzer = (row.buzzer ?? '-').toUpperCase();
-                const status = row.status ?? '-';
                 const label = row.label ?? '-';
                 const key = row.key ?? '';
-
-                let statusBadgeClass = 'badge-secondary';
-                if (status === 'online') statusBadgeClass = 'badge-success';
-                if (status === 'offline') statusBadgeClass = 'badge-secondary';
 
                 let labelBadgeClass = 'badge-secondary';
                 if (label === 'AMAN') labelBadgeClass = 'badge-success';
@@ -218,7 +213,6 @@
                         <td>${dist}</td>
                         <td>${flow}</td>
                         <td>${buzzer}</td>
-                        <td><span class="badge ${statusBadgeClass}">${status}</span></td>
                         <td><span class="badge ${labelBadgeClass}">${label}</span></td>
                         <td>
                             <button type="button"
