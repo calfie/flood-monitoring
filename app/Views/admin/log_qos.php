@@ -123,7 +123,6 @@
                         <th style="width: 150px;">Packet loss (%)</th>
                         <th style="width: 160px;">Throughput (bps)</th>
                         <th style="width: 120px;">Jitter (ms)</th>
-                        <th style="width: 120px;">Status perangkat</th>
                         <th style="width: 90px;">Aksi</th>
                     </tr>
                 </thead>
