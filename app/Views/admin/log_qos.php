@@ -196,11 +196,6 @@
                 const jitter = row.jitter_ms ?? '-';
                 const status = row.status ?? '-';
                 const key = row.key ?? '';
-
-                let statusBadgeClass = 'badge-secondary';
-                if (status === 'online') statusBadgeClass = 'badge-success';
-                if (status === 'offline') statusBadgeClass = 'badge-secondary';
-
                 html += `
                     <tr>
                         <td class="text-center">
@@ -216,7 +211,6 @@
                         <td>${ploss}</td>
                         <td>${thput}</td>
                         <td>${jitter}</td>
-                        <td><span class="badge ${statusBadgeClass}">${status}</span></td>
                         <td>
                             <button type="button"
                                 class="btn btn-sm btn-danger"

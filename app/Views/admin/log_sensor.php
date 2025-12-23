@@ -121,7 +121,6 @@
                         <th style="width: 120px;">Ketinggian (cm)</th>
                         <th style="width: 120px;">Arus (L/min)</th>
                         <th style="width: 90px;">Buzzer</th>
-                        <th style="width: 110px;">Status perangkat</th>
                         <th style="width: 120px;">Label parameter</th>
                         <th style="width: 90px;">Aksi</th>
                     </tr>
