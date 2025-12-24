@@ -99,13 +99,11 @@ class Api extends BaseController
             return ($a['_ts'] <=> $b['_ts']);
         });
 
-        // batasi 300 titik terakhir
         $maxPoints = 300;
         if (count($out) > $maxPoints) {
             $out = array_slice($out, -$maxPoints);
         }
 
-        // buang field _ts sebelum dikirim ke frontend
         $clean = array_map(function ($row) {
             unset($row['_ts']);
             return $row;

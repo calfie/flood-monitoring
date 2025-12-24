@@ -23,8 +23,8 @@ class Dashboard extends BaseController
         if ($flowLpm === null || $flowLpm < 0) return '-';
 
         // contoh rule kamu:
-        if ($flowLpm >= 80) return 'DARURAT';
-        if ($flowLpm >= 40) return 'SIAGA';
+        if ($flowLpm >= 3) return 'DARURAT';
+        if ($flowLpm >= 2) return 'SIAGA';
         return 'AMAN';
     }
 
