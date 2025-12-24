@@ -80,24 +80,15 @@ class Dashboard extends BaseController
             $worstRank = max($worstRank, $statusRank[$label] ?? 0);
 
             // ====== TELEGRAM: hanya kalau DARURAT + hanya kalau data baru ======
+            // ====== TELEGRAM: kirim setiap kali DARURAT ======
             if ($label === 'DARURAT') {
-                // kunci unik: node + waktu data
-                // jadi kalau refresh 100x, tetap 1x kirim selama logged_at sama
-                $dedupeKey = 'tg_sent_' . $nodeId . '_' . md5((string) $loggedAt);
+                $msg = "<b>🚨 STATUS DARURAT</b>\n"
+                    . "<b>Node:</b> {$nodeId}\n"
+                    . "<b>Ketinggian:</b> " . ($dev['distance_cm'] ?? '-') . " cm\n"
+                    . "<b>Arus:</b> " . ($dev['flow_lpm'] ?? '-') . " L/min\n"
+                    . "<b>Waktu:</b> {$loggedAt}";
 
-                if (!$cache->get($dedupeKey)) {
-                    $msg = "<b>🚨 STATUS DARURAT</b>\n"
-                        . "<b>Node:</b> {$nodeId}\n"
-                        . "<b>Ketinggian:</b> " . ($dev['distance_cm'] ?? '-') . " cm\n"
-                        . "<b>Arus:</b> " . ($dev['flow_lpm'] ?? '-') . " L/min\n"
-                        . "<b>Waktu:</b> {$loggedAt}";
-
-                    sendTelegramAlert($msg);
-
-                    // simpan penanda. TTL bebas, yang penting cukup lama utk mencegah duplikat.
-                    // 7 hari aman (kalau logged_at unik, TTL berapapun ga masalah).
-                    $cache->save($dedupeKey, 1, 60 * 60 * 24 * 7);
-                }
+                sendTelegramAlert($msg);
             }
         }
         unset($dev);

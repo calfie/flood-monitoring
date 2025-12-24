@@ -5,7 +5,6 @@ namespace App\Models;
 
 class FirebaseModel
 {
-    // URL Realtime Database (tanpa .json di akhir)
     protected string $firebaseBaseUrl = 'https://enyoderamil-default-rtdb.asia-southeast1.firebasedatabase.app';
 
     /**

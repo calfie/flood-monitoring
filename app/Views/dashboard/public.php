@@ -163,7 +163,7 @@ function labelBadgeClass($label)
 <?= $this->endSection(); ?>
 
 
-<!-- ===================== SCRIPT (tidak diubah banyak, cuma penyesuaian kecil) ===================== -->
+<!-- ========================================== -->
 <?= $this->section('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
