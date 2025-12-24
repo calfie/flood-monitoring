@@ -49,7 +49,7 @@ class Dashboard extends BaseController
 
         $cache    = \Config\Services::cache();
         $firebase = new FirebaseModel();
-        $devices  = $firebase->getDevices(); // NODE1, NODE2, ...
+        $devices  = $firebase->getDevices();
 
         // untuk status keseluruhan
         $statusRank = ['-' => 0, 'AMAN' => 1, 'SIAGA' => 2, 'DARURAT' => 3];
@@ -57,30 +57,27 @@ class Dashboard extends BaseController
 
         foreach ($devices as $nodeId => &$dev) {
 
-            // ====== ambil nilai sesuai key firebase kamu ======
+            // ====== sesuai key firebase ======
             $distance = isset($dev['distance_cm']) ? (float) $dev['distance_cm'] : null;
             $flow     = isset($dev['flow_lpm'])    ? (float) $dev['flow_lpm']    : null;
 
-            // ====== timestamp data dari firebase (WAJIB buat anti-duplikat) ======
-            // pastikan ini bener-bener berubah tiap data baru masuk
-            $loggedAt = $dev['logged_at'] ?? null; // contoh: "2025-12-12 15:10:05"
+
+            $loggedAt = $dev['logged_at'] ?? null;
             if (!$loggedAt) {
-                // fallback kalau belum ada (tidak ideal, tapi biar aman)
                 $loggedAt = date('Y-m-d H:i:s');
             }
 
-            // ====== label param utk ditampilkan ======
+            // ====== label param ======
             $label = $this->classifyNode($distance, $flow);
             $dev['label_param'] = $label;
 
-            // ====== buat tampilan waktu di card: pakai loggedAt ======
+            // ====== buat tampilan waktu di card ======
             $dev['updated_ms_readable'] = $loggedAt;
 
             // update status overall
             $worstRank = max($worstRank, $statusRank[$label] ?? 0);
 
-            // ====== TELEGRAM: hanya kalau DARURAT + hanya kalau data baru ======
-            // ====== TELEGRAM: kirim setiap kali DARURAT ======
+            // ====== TELEGRAM ======
             if ($label === 'DARURAT') {
                 $msg = "<b>🚨 STATUS DARURAT</b>\n"
                     . "<b>Node:</b> {$nodeId}\n"

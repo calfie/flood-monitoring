@@ -213,7 +213,7 @@
 
         const body = 'node=' + encodeURIComponent(node) + '&key=' + encodeURIComponent(key);
 
-        // kalau kamu mau pakai deleteLog yang sudah ada (admin/delete-log), tinggal ganti endpoint ini:
+
         const res = await fetch("<?= base_url('admin/delete-log'); ?>", {
             method: 'POST',
             headers: {
@@ -240,7 +240,6 @@
         const keys = Array.from(checks).map(cb => cb.dataset.key).filter(Boolean);
         const body = 'node=' + encodeURIComponent(node) + keys.map(k => '&keys[]=' + encodeURIComponent(k)).join('');
 
-        // kalau kamu mau pakai deleteLogs yang sudah ada (admin/delete-logs), endpointnya ini:
         const res = await fetch("<?= base_url('admin/delete-logs'); ?>", {
             method: 'POST',
             headers: {

@@ -663,8 +663,8 @@ class Admin extends BaseController
         if ($rssiDbm === null) return '-';
 
         // makin dekat ke 0 makin bagus
-        if ($rssiDbm >= -70)  return 'BAIK';
-        if ($rssiDbm >= -100) return 'SEDANG';
+        if ($rssiDbm >= -90)  return 'BAIK';
+        if ($rssiDbm >= -105) return 'SEDANG';
         return 'BURUK';
     }
 
@@ -673,7 +673,7 @@ class Admin extends BaseController
         if ($snrDb === null) return '-';
 
         // makin besar makin bagus
-        if ($snrDb >= 10) return 'BAIK';
+        if ($snrDb >= 2) return 'BAIK';
         if ($snrDb >= 0)  return 'SEDANG';
         return 'BURUK';
     }
