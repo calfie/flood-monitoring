@@ -70,9 +70,9 @@ class Admin extends BaseController
 
         if ($distanceCm >= 30) {
             return 'AMAN';
-        } elseif ($distanceCm >= 25) { // 50–99
+        } elseif ($distanceCm >= 25) {
             return 'SIAGA';
-        } else { // 0–49
+        } else {
             return 'DARURAT';
         }
     }
@@ -83,9 +83,9 @@ class Admin extends BaseController
             return '-';
         }
 
-        if ($flowLpm >= 80) {
+        if ($flowLpm >= 40) {
             return 'DARURAT';
-        } elseif ($flowLpm >= 40) { // 20–39
+        } elseif ($flowLpm >= 25) { // 20–39
             return 'SIAGA';
         }
 
